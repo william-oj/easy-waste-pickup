@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AppView, LocationData } from '../types';
 import { hasUserProfile } from '../services/userProfileService';
-import { getSavedLocation, saveLocation } from '../services/locationService';
+import { getSavedLocation, saveLocation } from '@/services/locationService';
 import UserProfilePrompt from './UserProfilePrompt';
 import { UserProfile } from '../services/userProfileService';
 

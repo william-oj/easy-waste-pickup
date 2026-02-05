@@ -4,11 +4,15 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; message?: string }>
-{
-  constructor(props: { children: React.ReactNode }) {
+type ErrorBoundaryProps = { children: React.ReactNode };
+type ErrorBoundaryState = { hasError: boolean; message?: string };
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  declare props: Readonly<ErrorBoundaryProps>;
+  state: ErrorBoundaryState = { hasError: false };
+
+  constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: Error) {
