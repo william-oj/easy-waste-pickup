@@ -1,0 +1,9 @@
+
+{
+  "name": "Easy Waste Pickup",
+  "description": "A streamlined app for requesting waste collection, bulky item pickups, and reporting neighborhood waste issues using Gemini AI.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
