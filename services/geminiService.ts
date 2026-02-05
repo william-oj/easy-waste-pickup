@@ -1,10 +1,38 @@
-
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 
-// Ensure process.env.API_KEY is available in the environment
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const API_KEY = (
+  import.meta.env.VITE_GEMINI_API_KEY ??
+  import.meta.env.GEMINI_API_KEY ??
+  import.meta.env.VITE_API_KEY ??
+  import.meta.env.API_KEY ??
+  ""
+).trim();
+
+const isGeminiConfigured = API_KEY.length > 0;
+let ai: GoogleGenAI | null = null;
+
+if (isGeminiConfigured) {
+  try {
+    ai = new GoogleGenAI({ apiKey: API_KEY });
+  } catch (error) {
+    console.error("Failed to initialize Gemini AI client", error);
+    ai = null;
+  }
+}
+
+const AI_DISABLED_MESSAGE =
+  "Gemini AI is disabled for this deployment. Set GEMINI_API_KEY to enable the assistant.";
+
+const disabledResponse = (feature: string): string => {
+  console.warn(`Skipping Gemini feature \"${feature}\" because the API key is missing`);
+  return AI_DISABLED_MESSAGE;
+};
 
 export const getGeminiResponse = async (prompt: string): Promise<string> => {
+  if (!ai) {
+    return disabledResponse('getGeminiResponse');
+  }
+
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -18,10 +46,14 @@ export const getGeminiResponse = async (prompt: string): Promise<string> => {
 };
 
 export const analyzeWasteImage = async (
-  prompt: string, 
-  base64Image: string, 
+  prompt: string,
+  base64Image: string,
   mimeType: string = 'image/jpeg'
 ): Promise<string> => {
+  if (!ai) {
+    return disabledResponse('analyzeWasteImage');
+  }
+
   try {
     const imagePart = {
       inlineData: {
@@ -44,6 +76,10 @@ export const analyzeWasteImage = async (
 };
 
 export const chatWithGemini = async (history: { role: string; text: string }[], message: string): Promise<string> => {
+  if (!ai) {
+    return disabledResponse('chatWithGemini');
+  }
+
   try {
     const chat = ai.chats.create({
       model: 'gemini-3-flash-preview',
