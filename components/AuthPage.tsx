@@ -133,7 +133,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen max-w-md mx-auto bg-gradient-to-br from-emerald-600 via-teal-500 to-cyan-600 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen w-full sm:max-w-md sm:mx-auto bg-gradient-to-br from-emerald-600 via-teal-500 to-cyan-600 flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Decorative elements */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -mr-48 -mt-48"></div>
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/10 rounded-full -ml-48 -mb-48"></div>

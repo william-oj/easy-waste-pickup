@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { auth, db } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { collection, addDoc, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore';
 import CollectorLogin from './components/CollectorLogin';
 import CollectorDashboard from './components/CollectorDashboard';
 import MyRequests from './components/MyRequests';
@@ -37,15 +37,37 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<AppView>(AppView.HOME);
   const [location, setLocation] = useState<LocationData>({ address: '' });
   const [isCollectorLoggedIn, setIsCollectorLoggedIn] = useState(false);
+  const [userType, setUserType] = useState<'user' | 'collector' | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Listen for Firebase auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
-      setIsCollectorLoggedIn(!!user);
+      if (user) {
+        // Check if user is a collector by querying Firestore
+        try {
+          const collectorDoc = await getDoc(doc(db, 'collectors', user.uid));
+          if (collectorDoc.exists()) {
+            setUserType('collector');
+            setIsCollectorLoggedIn(true);
+            setCurrentView(AppView.COLLECTOR);
+          } else {
+            setUserType('user');
+            setIsCollectorLoggedIn(false);
+            setCurrentView(AppView.HOME);
+          }
+        } catch (error) {
+          console.error('Error checking user type:', error);
+          setUserType('user');
+          setIsCollectorLoggedIn(false);
+        }
+      } else {
+        setUserType(null);
+        setIsCollectorLoggedIn(false);
+      }
       setLoading(false);
     });
     return () => unsubscribe();
@@ -132,7 +154,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen max-w-md mx-auto bg-white shadow-xl relative overflow-hidden flex flex-col border-x border-emerald-100">
+    <div className="min-h-screen w-full sm:max-w-md sm:mx-auto bg-white shadow-xl relative overflow-hidden flex flex-col sm:border-x border-emerald-100">
       <header className="bg-emerald-600 text-white p-6 shadow-md shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
