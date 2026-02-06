@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { AppView, LocationData } from '../types';
-import { hasUserProfile } from '../services/userProfileService';
+import { hasUserProfile, getUserProfile } from '../services/userProfileService';
 import { getSavedLocation, saveLocation } from '@/services/locationService';
 import UserProfilePrompt from './UserProfilePrompt';
 import { UserProfile } from '../services/userProfileService';
+import { signOut } from 'firebase/auth';
+import { auth, db } from '../firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
 interface HomeProps {
   onNavigate: (view: AppView) => void;
@@ -17,12 +20,19 @@ const Home: React.FC<HomeProps> = ({ onNavigate, location, onLocationChange, onP
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [tempAddress, setTempAddress] = useState(location.address);
   const [savedLocation, setSavedLocation] = useState<string | null>(null);
+  const [userName, setUserName] = useState('');
+  const [pendingCount, setPendingCount] = useState(0);
+  const [activeCount, setActiveCount] = useState(0);
 
-  // Check if user has profile on mount
+  // Check if user has profile and load name
   useEffect(() => {
     const checkProfile = async () => {
       const hasProfile = await hasUserProfile();
       setShowProfilePrompt(!hasProfile);
+      const profile = await getUserProfile();
+      if (profile?.name) {
+        setUserName(profile.name);
+      }
     };
     checkProfile();
   }, []);
@@ -42,8 +52,35 @@ const Home: React.FC<HomeProps> = ({ onNavigate, location, onLocationChange, onP
     }
   }, []);
 
+  // Listen for user's request counts
+  useEffect(() => {
+    if (!auth.currentUser) return;
+
+    const userProfile = getUserProfile();
+    userProfile.then(profile => {
+      if (!profile?.phone) return;
+
+      const requestsRef = collection(db, 'requests');
+      const unsubscribe = onSnapshot(requestsRef, (snapshot) => {
+        let pending = 0;
+        let active = 0;
+        snapshot.docs.forEach(doc => {
+          const data = doc.data();
+          if (data.userPhone === profile.phone) {
+            if (data.status === 'pending') pending++;
+            if (data.status === 'accepted') active++;
+          }
+        });
+        setPendingCount(pending);
+        setActiveCount(active);
+      });
+      return unsubscribe;
+    });
+  }, []);
+
   const handleProfileComplete = (profile: UserProfile) => {
     setShowProfilePrompt(false);
+    if (profile.name) setUserName(profile.name);
   };
 
   const handleSaveAddress = () => {
@@ -60,176 +97,266 @@ const Home: React.FC<HomeProps> = ({ onNavigate, location, onLocationChange, onP
     setIsEditingLocation(true);
   };
 
-  const displayAddress = location.address || savedLocation || 'Set your service address';
-  const hasAddress = location.address && location.address.trim().length > 0;
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (err: any) {
+      alert('Logout failed: ' + err.message);
+    }
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  const displayAddress = location.address || savedLocation || 'Set your address';
+
+  const services = [
+    {
+      id: 'schedule',
+      icon: 'fa-calendar-plus',
+      title: 'Schedule Pickup',
+      desc: 'Request waste collection',
+      gradient: 'from-emerald-500 to-teal-500',
+      shadow: 'shadow-emerald-500/30',
+      onClick: () => onNavigate(AppView.REGULAR)
+    },
+    {
+      id: 'bulky',
+      icon: 'fa-couch',
+      title: 'Bulky Items',
+      desc: 'Large item disposal',
+      gradient: 'from-blue-500 to-indigo-500',
+      shadow: 'shadow-blue-500/30',
+      onClick: () => onNavigate(AppView.BULKY)
+    },
+    {
+      id: 'report',
+      icon: 'fa-flag',
+      title: 'Report Issue',
+      desc: 'Report problems',
+      gradient: 'from-orange-500 to-red-500',
+      shadow: 'shadow-orange-500/30',
+      onClick: () => onNavigate(AppView.REPORT)
+    },
+    {
+      id: 'chat',
+      icon: 'fa-robot',
+      title: 'AI Assistant',
+      desc: 'Get smart help',
+      gradient: 'from-purple-500 to-pink-500',
+      shadow: 'shadow-purple-500/30',
+      onClick: () => onNavigate(AppView.CHAT)
+    }
+  ];
 
   return (
-    <>
+    <div className="min-h-screen w-full sm:max-w-md sm:mx-auto bg-slate-50 flex flex-col">
       {showProfilePrompt && (
-        <UserProfilePrompt 
+        <UserProfilePrompt
           onComplete={handleProfileComplete}
           onSkip={() => setShowProfilePrompt(false)}
         />
       )}
-      <div className="space-y-6 animate-in fade-in duration-500">
-        {/* Header Section */}
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <h1 className="text-4xl font-extrabold text-gray-800">Welcome Back</h1>
-            <p className="text-gray-600 text-lg">Ready to manage your waste?</p>
+
+      {/* Header - Glassmorphism style */}
+      <header className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white px-4 pt-6 pb-24 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20 animate-pulse"></div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16 animate-pulse" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-1/2 right-4 w-20 h-20 bg-white/5 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+
+        <div className="relative z-10">
+          {/* Top bar */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30">
+                <i className="fa-solid fa-recycle text-xl"></i>
+              </div>
+              <div>
+                <p className="text-emerald-100 text-xs font-medium">{getGreeting()}</p>
+                <h1 className="text-lg font-bold">{userName || 'Welcome'}</h1>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => onNavigate(AppView.PROFILE)}
+                className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30 hover:bg-white/30 transition-all active:scale-95"
+              >
+                <i className="fa-solid fa-user"></i>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30 hover:bg-white/30 transition-all active:scale-95"
+              >
+                <i className="fa-solid fa-right-from-bracket"></i>
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="flex space-x-3">
+            <button
+              onClick={() => onNavigate(AppView.MY_REQUESTS)}
+              className="flex-1 bg-white/20 backdrop-blur-sm rounded-2xl p-3 border border-white/30 hover:bg-white/30 transition-all active:scale-95"
+            >
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-amber-400 rounded-lg flex items-center justify-center">
+                  <i className="fa-solid fa-clock text-amber-900 text-sm"></i>
+                </div>
+                <div className="text-left">
+                  <p className="text-2xl font-bold">{pendingCount}</p>
+                  <p className="text-xs text-emerald-100">Pending</p>
+                </div>
+              </div>
+            </button>
+            <button
+              onClick={() => onNavigate(AppView.MY_REQUESTS)}
+              className="flex-1 bg-white/20 backdrop-blur-sm rounded-2xl p-3 border border-white/30 hover:bg-white/30 transition-all active:scale-95"
+            >
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-blue-400 rounded-lg flex items-center justify-center">
+                  <i className="fa-solid fa-truck text-blue-900 text-sm"></i>
+                </div>
+                <div className="text-left">
+                  <p className="text-2xl font-bold">{activeCount}</p>
+                  <p className="text-xs text-emerald-100">Active</p>
+                </div>
+              </div>
+            </button>
           </div>
         </div>
+      </header>
 
-        {/* Location Card - Enhanced */}
+      {/* Location Card - Floating */}
+      <div className="px-4 -mt-12 relative z-20">
         {!isEditingLocation ? (
-          <div className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl p-6 text-white shadow-lg border border-emerald-400/20">
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-3 flex-1">
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm mt-1">
-                    <i className="fa-solid fa-location-dot text-2xl"></i>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-semibold text-emerald-50 uppercase tracking-widest mb-1">Service Location</p>
-                    <p className="text-2xl font-bold leading-tight break-words pr-2">{displayAddress}</p>
-                    <p className="text-xs text-emerald-50 mt-2 opacity-90">Used for all your requests</p>
-                  </div>
+          <div className="bg-white rounded-2xl shadow-lg p-4 border border-gray-100 animate-in fade-in duration-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <i className="fa-solid fa-location-dot text-emerald-600"></i>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-500 font-medium">Service Location</p>
+                  <p className="font-semibold text-gray-800 truncate">{displayAddress}</p>
                 </div>
               </div>
               <button
                 onClick={handleEditAddress}
-                className="w-full bg-white/20 hover:bg-white/30 text-white font-semibold py-3 px-4 rounded-xl transition-all backdrop-blur-sm border border-white/20 flex items-center justify-center space-x-2"
+                className="w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center transition-all active:scale-95 flex-shrink-0"
               >
-                <i className="fa-solid fa-pencil"></i>
-                <span>Change Address</span>
+                <i className="fa-solid fa-pencil text-gray-600"></i>
               </button>
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl shadow-lg border border-emerald-200 p-6 space-y-4 animate-in slide-in-from-top duration-300">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
+          <div className="bg-white rounded-2xl shadow-lg p-4 border border-emerald-200 animate-in slide-in-from-top duration-300">
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
                 <i className="fa-solid fa-location-dot text-emerald-500"></i>
-                <span>Enter your service address</span>
-              </label>
+                <span className="text-sm font-semibold text-gray-700">Enter your address</span>
+              </div>
               <input
                 type="text"
                 value={tempAddress}
                 onChange={(e) => setTempAddress(e.target.value)}
                 placeholder="Street address, city, zip code"
                 autoFocus
-                className="w-full p-4 border-2 border-emerald-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none text-lg transition-all"
+                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all"
               />
-            </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={handleSaveAddress}
-                disabled={!tempAddress.trim()}
-                className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 active:scale-95"
-              >
-                <i className="fa-solid fa-check"></i>
-                <span>Save Address</span>
-              </button>
-              <button
-                onClick={() => setIsEditingLocation(false)}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-xl transition-all"
-              >
-                Cancel
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleSaveAddress}
+                  disabled={!tempAddress.trim()}
+                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50 active:scale-95 flex items-center justify-center space-x-2"
+                >
+                  <i className="fa-solid fa-check"></i>
+                  <span>Save</span>
+                </button>
+                <button
+                  onClick={() => setIsEditingLocation(false)}
+                  className="flex-1 bg-gray-100 text-gray-700 font-semibold py-3 rounded-xl transition-all hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         )}
+      </div>
 
-        {/* Service Options Grid */}
-        <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-gray-800">What can we help with?</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <MenuButton 
-              icon="fa-solid fa-calendar-check" 
-              title="Schedule" 
-              desc="Request pickup"
-              color="emerald"
-              onClick={() => onNavigate(AppView.REGULAR)}
-            />
-            <MenuButton 
-              icon="fa-solid fa-couch" 
-              title="Bulky Items" 
-              desc="Large pickup"
-              color="teal"
-              onClick={() => onNavigate(AppView.BULKY)}
-            />
-            <MenuButton 
-              icon="fa-solid fa-circle-exclamation" 
-              title="Report" 
-              desc="Issue report"
-              color="orange"
-              onClick={() => onNavigate(AppView.REPORT)}
-            />
-            <MenuButton 
-              icon="fa-solid fa-robot" 
-              title="AI Assistant" 
-              desc="Ask questions"
-              color="indigo"
-              onClick={() => onNavigate(AppView.CHAT)}
-            />
-            <MenuButton 
-              icon="fa-solid fa-list-check" 
-              title="My Requests" 
-              desc="Track status"
-              color="blue"
-              onClick={() => onNavigate(AppView.MY_REQUESTS)}
-            />
+      {/* Main Content */}
+      <main className="flex-1 px-4 py-6 overflow-y-auto">
+        {/* Services Section */}
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-500">
+          <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center space-x-2">
+            <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+            <span>Quick Actions</span>
+          </h2>
+
+          <div className="grid grid-cols-2 gap-3">
+            {services.map((service, index) => (
+              <button
+                key={service.id}
+                onClick={service.onClick}
+                className={`bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 active:scale-95 animate-in fade-in slide-in-from-bottom group`}
+                style={{ animationDelay: `${index * 75}ms` }}
+              >
+                <div className={`w-12 h-12 bg-gradient-to-br ${service.gradient} rounded-xl flex items-center justify-center mb-3 shadow-lg ${service.shadow} group-hover:scale-110 transition-transform`}>
+                  <i className={`fa-solid ${service.icon} text-white text-lg`}></i>
+                </div>
+                <h3 className="font-bold text-gray-800 text-sm mb-1">{service.title}</h3>
+                <p className="text-xs text-gray-500">{service.desc}</p>
+              </button>
+            ))}
           </div>
+
+          {/* My Requests Button */}
+          <button
+            onClick={() => onNavigate(AppView.MY_REQUESTS)}
+            className="w-full bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all active:scale-[0.98] flex items-center justify-between animate-in fade-in slide-in-from-bottom duration-500"
+            style={{ animationDelay: '300ms' }}
+          >
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                <i className="fa-solid fa-list-check text-lg"></i>
+              </div>
+              <div className="text-left">
+                <p className="font-bold">My Requests</p>
+                <p className="text-xs text-slate-300">Track your pickups</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              {(pendingCount + activeCount) > 0 && (
+                <span className="bg-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-lg">
+                  {pendingCount + activeCount}
+                </span>
+              )}
+              <i className="fa-solid fa-chevron-right text-slate-400"></i>
+            </div>
+          </button>
         </div>
 
-        {/* Info Banner */}
-        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-4 flex items-start space-x-3">
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-            <i className="fa-solid fa-lightbulb text-white"></i>
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold text-blue-900 text-sm mb-1">Pro Tip</p>
-            <p className="text-xs text-blue-700 leading-relaxed">
-              Your service address is saved. We'll ask you to confirm or change it before each request.
-            </p>
+        {/* Tips Section */}
+        <div className="mt-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 animate-in fade-in duration-500" style={{ animationDelay: '400ms' }}>
+          <div className="flex items-start space-x-3">
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <i className="fa-solid fa-lightbulb text-white"></i>
+            </div>
+            <div>
+              <p className="font-semibold text-blue-900 text-sm">Quick Tip</p>
+              <p className="text-xs text-blue-700 mt-1 leading-relaxed">
+                Schedule regular pickups and never miss a collection day. Our collectors are ready to help!
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-    </>
-  );
-};
-
-interface MenuButtonProps {
-  icon: string;
-  title: string;
-  desc: string;
-  color: 'emerald' | 'teal' | 'orange' | 'indigo' | 'blue' | 'purple';
-  onClick: () => void;
-}
-
-const colorConfig = {
-  emerald: { bg: 'bg-emerald-500', light: 'bg-emerald-50', border: 'border-emerald-200' },
-  teal: { bg: 'bg-teal-500', light: 'bg-teal-50', border: 'border-teal-200' },
-  orange: { bg: 'bg-orange-500', light: 'bg-orange-50', border: 'border-orange-200' },
-  indigo: { bg: 'bg-indigo-500', light: 'bg-indigo-50', border: 'border-indigo-200' },
-  blue: { bg: 'bg-blue-500', light: 'bg-blue-50', border: 'border-blue-200' },
-  purple: { bg: 'bg-purple-500', light: 'bg-purple-50', border: 'border-purple-200' }
-};
-
-const MenuButton: React.FC<MenuButtonProps> = ({ icon, title, desc, color, onClick }) => {
-  const colors = colorConfig[color];
-  
-  return (
-    <button 
-      onClick={onClick}
-      className={`flex flex-col items-center justify-center text-center p-6 ${colors.light} rounded-2xl border ${colors.border} shadow-sm hover:shadow-lg hover:scale-105 transition-all active:scale-95 group`}
-    >
-      <div className={`${colors.bg} text-white p-4 rounded-full mb-3 shadow-md`}>
-        <i className={`${icon} text-xl`}></i>
-      </div>
-      <h3 className="font-bold text-gray-800 text-sm">{title}</h3>
-      <p className="text-xs text-gray-500 mt-1">{desc}</p>
-    </button>
+      </main>
+    </div>
   );
 };
 

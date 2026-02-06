@@ -100,14 +100,12 @@ const App: React.FC = () => {
 
   const renderView = () => {
     switch (currentView) {
-      case AppView.HOME:
-        return <Home onNavigate={setCurrentView} location={location} onLocationChange={setLocation} onProfileClick={() => setCurrentView(AppView.PROFILE)} />;
       case AppView.REGULAR:
         // Inlined RegularPickup with calendar + Firebase submit
         return (
-          <RegularPickupView 
-            location={location} 
-            generateContent={generateContent} 
+          <RegularPickupView
+            location={location}
+            generateContent={generateContent}
             onBack={() => setCurrentView(AppView.HOME)}
             userProfile={userProfile}
             onNavigate={setCurrentView}
@@ -123,16 +121,14 @@ const App: React.FC = () => {
         return <MyRequests onBack={() => setCurrentView(AppView.HOME)} />;
       case AppView.PROFILE:
         return (
-          <UserProfilePage 
+          <UserProfilePage
             userProfile={userProfile}
             onBack={() => setCurrentView(AppView.HOME)}
             onProfileUpdate={setUserProfile}
           />
         );
-      case AppView.COLLECTOR:
-        return isCollectorLoggedIn ? <CollectorDashboard /> : <CollectorLogin />;
       default:
-        return <Home onNavigate={setCurrentView} location={location} onLocationChange={setLocation} />;
+        return null;
     }
   };
 
@@ -153,45 +149,49 @@ const App: React.FC = () => {
     return <AuthPage onAuthSuccess={() => {}} />;
   }
 
+  // Render full-screen views without wrapper (they have their own headers)
+  if (currentView === AppView.HOME) {
+    return <Home onNavigate={setCurrentView} location={location} onLocationChange={setLocation} onProfileClick={() => setCurrentView(AppView.PROFILE)} />;
+  }
+
+  if (currentView === AppView.COLLECTOR) {
+    return isCollectorLoggedIn ? <CollectorDashboard /> : <CollectorLogin />;
+  }
+
+  // Render other views with the standard wrapper
   return (
-    <div className="min-h-screen w-full sm:max-w-md sm:mx-auto bg-white shadow-xl relative overflow-hidden flex flex-col sm:border-x border-emerald-100">
-      <header className="bg-emerald-600 text-white p-6 shadow-md shrink-0">
+    <div className="min-h-screen w-full sm:max-w-md sm:mx-auto bg-slate-50 flex flex-col">
+      {/* Header */}
+      <header className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white px-4 py-4 shadow-md shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="bg-white p-2 rounded-full">
-              <i className="fa-solid fa-truck-fast text-emerald-600 text-xl"></i>
-            </div>
-            <h1 className="text-xl font-bold tracking-tight">Easy Waste Pickup</h1>
+            <button
+              onClick={() => setCurrentView(AppView.HOME)}
+              className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30 hover:bg-white/30 transition-all active:scale-95"
+            >
+              <i className="fa-solid fa-arrow-left"></i>
+            </button>
+            <h1 className="text-lg font-bold">
+              {currentView === AppView.REGULAR && 'Schedule Pickup'}
+              {currentView === AppView.BULKY && 'Bulky Items'}
+              {currentView === AppView.REPORT && 'Report Issue'}
+              {currentView === AppView.CHAT && 'AI Assistant'}
+              {currentView === AppView.MY_REQUESTS && 'My Requests'}
+              {currentView === AppView.PROFILE && 'My Profile'}
+            </h1>
           </div>
-          <div className="flex items-center space-x-3">
-            {currentView === AppView.HOME && (
-              <button 
-                onClick={() => setCurrentView(AppView.PROFILE)}
-                className="bg-white/20 hover:bg-white/30 text-white p-3 rounded-lg transition-colors backdrop-blur-sm"
-                title="My Profile"
-              >
-                <i className="fa-solid fa-user text-lg"></i>
-              </button>
-            )}
-            {currentView !== AppView.HOME && (
-              <button 
-                onClick={() => setCurrentView(AppView.HOME)}
-                className="text-white hover:bg-emerald-700 p-2 rounded-lg transition-colors"
-              >
-                <i className="fa-solid fa-house"></i>
-              </button>
-            )}
-          </div>
+          <button
+            onClick={() => setCurrentView(AppView.HOME)}
+            className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30 hover:bg-white/30 transition-all active:scale-95"
+          >
+            <i className="fa-solid fa-house"></i>
+          </button>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-emerald-50/30">
+      <main className="flex-1 overflow-y-auto p-4 bg-slate-50">
         {renderView()}
       </main>
-
-      <footer className="bg-white border-t p-3 text-center text-xs text-gray-500">
-        &copy; {new Date().getFullYear()} EcoSmart Systems. Stay Clean, Stay Green.
-      </footer>
     </div>
   );
 };
