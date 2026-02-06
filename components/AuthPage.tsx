@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
@@ -17,13 +17,15 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const validatePhone = (phone: string): boolean => {
     return /^\d{10,}$/.test(phone.replace(/\D/g, ''));
   };
 
   const validateEmail = (email: string): boolean => {
-    if (!email) return true; // Email is optional
+    if (!email) return true;
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
@@ -34,8 +36,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
   const handleSignUp = async () => {
     setError('');
-    
-    // Validation
+
     if (!name.trim()) {
       setError('Name is required');
       return;
@@ -64,7 +65,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
       const user = userCredential.user;
 
       if (userType === 'user') {
-        // Create user profile
         await setDoc(doc(db, 'users', user.uid), {
           name: name.trim(),
           phone: phone,
@@ -74,7 +74,6 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
           userType: 'user'
         });
       } else {
-        // Create collector profile
         await setDoc(doc(db, 'collectors', user.uid), {
           name: name.trim(),
           phone: phone,
@@ -132,229 +131,319 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
     setError('');
   };
 
-  return (
-    <div className="min-h-screen w-full sm:max-w-md sm:mx-auto bg-gradient-to-br from-emerald-600 via-teal-500 to-cyan-600 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Decorative elements */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full -mr-48 -mt-48"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/10 rounded-full -ml-48 -mb-48"></div>
+  const features = [
+    { icon: 'fa-truck', text: 'Fast pickup' },
+    { icon: 'fa-recycle', text: 'Eco-friendly' },
+    { icon: 'fa-clock', text: 'On-time service' },
+  ];
 
-      <div className="relative z-10 w-full max-w-sm">
-        {/* Logo and Title */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg">
-              <i className="fa-solid fa-truck-fast text-emerald-600 text-2xl"></i>
-            </div>
+  return (
+    <div className="min-h-screen w-full sm:max-w-md sm:mx-auto bg-slate-900 flex flex-col overflow-x-hidden">
+      {/* Animated Background */}
+      <div className="fixed inset-0 w-full sm:max-w-md sm:mx-auto overflow-hidden pointer-events-none">
+        {/* Main gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-slate-900 to-cyan-900"></div>
+
+        {/* Animated gradient orbs */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/30 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-0 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-1/2 left-0 w-64 h-64 bg-teal-500/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
+
+        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: 'linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px)',
+          backgroundSize: '50px 50px'
+        }}></div>
+
+        {/* Floating particles */}
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-2 h-2 bg-emerald-400/40 rounded-full animate-bounce"
+            style={{
+              left: `${15 + i * 15}%`,
+              top: `${20 + (i % 3) * 25}%`,
+              animationDelay: `${i * 0.3}s`,
+              animationDuration: `${2 + i * 0.5}s`
+            }}
+          ></div>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 flex-1 flex flex-col px-6 py-8 overflow-y-auto">
+        {/* Logo Section */}
+        <div className="text-center mb-8 animate-in fade-in slide-in-from-top duration-700">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-3xl mb-4 shadow-2xl shadow-emerald-500/30">
+            <i className="fa-solid fa-leaf text-3xl text-white"></i>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Easy Waste Pickup</h1>
-          <p className="text-emerald-100 text-sm">Smart waste management for your home</p>
+          <h1 className="text-3xl font-black text-white mb-2 tracking-tight">
+            Easy<span className="text-emerald-400">Waste</span>
+          </h1>
+          <p className="text-slate-400 text-sm">Smart waste management for everyone</p>
+
+          {/* Feature badges */}
+          <div className="flex justify-center space-x-3 mt-4">
+            {features.map((feature, i) => (
+              <div
+                key={feature.text}
+                className="flex items-center space-x-1 bg-white/5 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 animate-in fade-in duration-500"
+                style={{ animationDelay: `${300 + i * 100}ms` }}
+              >
+                <i className={`fa-solid ${feature.icon} text-emerald-400 text-xs`}></i>
+                <span className="text-xs text-slate-300">{feature.text}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Auth Card */}
-        <div className="bg-white rounded-3xl shadow-2xl p-8 space-y-6">
+        <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '200ms' }}>
           {/* User Type Toggle */}
-          <div className="flex space-x-2 bg-gray-100 p-1 rounded-xl">
-            <button
-              onClick={() => {
-                setUserType('user');
-                resetForm();
-              }}
-              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all text-sm ${
-                userType === 'user'
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <i className="fa-solid fa-home mr-2"></i>
-              User
-            </button>
-            <button
-              onClick={() => {
-                setUserType('collector');
-                resetForm();
-              }}
-              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all text-sm ${
-                userType === 'collector'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <i className="fa-solid fa-user-tie mr-2"></i>
-              Collector
-            </button>
+          <div className="p-4 border-b border-white/10">
+            <div className="flex p-1 bg-slate-800/50 rounded-2xl">
+              <button
+                onClick={() => { setUserType('user'); resetForm(); }}
+                className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
+                  userType === 'user'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <i className="fa-solid fa-house"></i>
+                <span>Resident</span>
+              </button>
+              <button
+                onClick={() => { setUserType('collector'); resetForm(); }}
+                className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
+                  userType === 'collector'
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <i className="fa-solid fa-truck"></i>
+                <span>Collector</span>
+              </button>
+            </div>
           </div>
 
           {/* Mode Toggle */}
-          <div className="flex space-x-2 bg-gray-100 p-1 rounded-xl">
-            <button
-              onClick={() => {
-                setMode('login');
-                resetForm();
-              }}
-              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all text-sm ${
-                mode === 'login'
-                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <i className="fa-solid fa-sign-in-alt mr-2"></i>
-              Login
-            </button>
-            <button
-              onClick={() => {
-                setMode('signup');
-                resetForm();
-              }}
-              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all text-sm ${
-                mode === 'signup'
-                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <i className="fa-solid fa-user-plus mr-2"></i>
-              Sign Up
-            </button>
+          <div className="px-6 pt-4">
+            <div className="flex space-x-4 border-b border-white/10">
+              <button
+                onClick={() => { setMode('login'); resetForm(); }}
+                className={`pb-3 px-1 font-semibold text-sm transition-all relative ${
+                  mode === 'login' ? 'text-white' : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                Sign In
+                {mode === 'login' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full"></div>
+                )}
+              </button>
+              <button
+                onClick={() => { setMode('signup'); resetForm(); }}
+                className={`pb-3 px-1 font-semibold text-sm transition-all relative ${
+                  mode === 'signup' ? 'text-white' : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                Create Account
+                {mode === 'signup' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full"></div>
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start space-x-3 animate-in slide-in-from-top duration-200">
-              <i className="fa-solid fa-circle-exclamation text-red-600 mt-0.5"></i>
-              <p className="text-red-700 text-sm font-medium">{error}</p>
-            </div>
-          )}
-
-          {/* Form Fields */}
-          <div className="space-y-4">
-            {/* Name Field - Sign Up Only */}
-            {mode === 'signup' && (
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                  <i className="fa-solid fa-user text-emerald-600"></i>
-                  <span>Full Name</span>
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your full name"
-                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none text-sm transition-all"
-                  disabled={loading}
-                />
+          {/* Form */}
+          <div className="p-6 space-y-4">
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-center space-x-3 animate-in shake duration-300">
+                <div className="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <i className="fa-solid fa-exclamation text-red-400"></i>
+                </div>
+                <p className="text-red-400 text-sm">{error}</p>
               </div>
             )}
 
-            {/* Phone Number Field */}
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                <i className="fa-solid fa-phone text-emerald-600"></i>
-                <span>Phone Number</span>
-              </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Enter your phone number"
-                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none text-sm transition-all"
-                disabled={loading}
-              />
-              <p className="text-xs text-gray-500">At least 10 digits required</p>
-            </div>
-
-            {/* Email Field - Sign Up Only & Optional */}
+            {/* Name Field - Signup Only */}
             {mode === 'signup' && (
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                  <i className="fa-solid fa-envelope text-emerald-600"></i>
-                  <span>Email Address <span className="text-gray-400 font-normal">(Optional)</span></span>
-                </label>
+              <div className="space-y-2 animate-in fade-in slide-in-from-left duration-300">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Full Name</label>
+                <div className={`flex items-center bg-slate-800/50 rounded-xl border-2 transition-all ${
+                  focusedField === 'name' ? 'border-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-transparent'
+                }`}>
+                  <div className="pl-4">
+                    <i className={`fa-solid fa-user text-sm ${focusedField === 'name' ? 'text-emerald-400' : 'text-slate-500'}`}></i>
+                  </div>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onFocus={() => setFocusedField('name')}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="John Doe"
+                    className="flex-1 bg-transparent text-white placeholder-slate-500 p-4 focus:outline-none text-sm"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Phone Field */}
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Phone Number</label>
+              <div className={`flex items-center bg-slate-800/50 rounded-xl border-2 transition-all ${
+                focusedField === 'phone' ? 'border-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-transparent'
+              }`}>
+                <div className="pl-4">
+                  <i className={`fa-solid fa-phone text-sm ${focusedField === 'phone' ? 'text-emerald-400' : 'text-slate-500'}`}></i>
+                </div>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com (optional)"
-                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none text-sm transition-all"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  onFocus={() => setFocusedField('phone')}
+                  onBlur={() => setFocusedField(null)}
+                  placeholder="Enter phone number"
+                  className="flex-1 bg-transparent text-white placeholder-slate-500 p-4 focus:outline-none text-sm"
                   disabled={loading}
                 />
+              </div>
+            </div>
+
+            {/* Email Field - Signup Only */}
+            {mode === 'signup' && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-left duration-300" style={{ animationDelay: '100ms' }}>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Email <span className="text-slate-600">(Optional)</span>
+                </label>
+                <div className={`flex items-center bg-slate-800/50 rounded-xl border-2 transition-all ${
+                  focusedField === 'email' ? 'border-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-transparent'
+                }`}>
+                  <div className="pl-4">
+                    <i className={`fa-solid fa-envelope text-sm ${focusedField === 'email' ? 'text-emerald-400' : 'text-slate-500'}`}></i>
+                  </div>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onFocus={() => setFocusedField('email')}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="your@email.com"
+                    className="flex-1 bg-transparent text-white placeholder-slate-500 p-4 focus:outline-none text-sm"
+                    disabled={loading}
+                  />
+                </div>
               </div>
             )}
 
             {/* Password Field */}
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                <i className="fa-solid fa-lock text-emerald-600"></i>
-                <span>Password</span>
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none text-sm transition-all"
-                disabled={loading}
-              />
-              {mode === 'signup' && (
-                <p className="text-xs text-gray-500">Must be at least 6 characters</p>
-              )}
-            </div>
-
-            {/* Confirm Password - Sign Up Only */}
-            {mode === 'signup' && (
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700 flex items-center space-x-2">
-                  <i className="fa-solid fa-lock text-emerald-600"></i>
-                  <span>Confirm Password</span>
-                </label>
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Password</label>
+              <div className={`flex items-center bg-slate-800/50 rounded-xl border-2 transition-all ${
+                focusedField === 'password' ? 'border-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-transparent'
+              }`}>
+                <div className="pl-4">
+                  <i className={`fa-solid fa-lock text-sm ${focusedField === 'password' ? 'text-emerald-400' : 'text-slate-500'}`}></i>
+                </div>
                 <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setFocusedField('password')}
+                  onBlur={() => setFocusedField(null)}
                   placeholder="••••••••"
-                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none text-sm transition-all"
+                  className="flex-1 bg-transparent text-white placeholder-slate-500 p-4 focus:outline-none text-sm"
                   disabled={loading}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="pr-4 text-slate-500 hover:text-emerald-400 transition-colors"
+                >
+                  <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-sm`}></i>
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm Password - Signup Only */}
+            {mode === 'signup' && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-left duration-300" style={{ animationDelay: '200ms' }}>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Confirm Password</label>
+                <div className={`flex items-center bg-slate-800/50 rounded-xl border-2 transition-all ${
+                  focusedField === 'confirm' ? 'border-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-transparent'
+                }`}>
+                  <div className="pl-4">
+                    <i className={`fa-solid fa-shield-halved text-sm ${focusedField === 'confirm' ? 'text-emerald-400' : 'text-slate-500'}`}></i>
+                  </div>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onFocus={() => setFocusedField('confirm')}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="••••••••"
+                    className="flex-1 bg-transparent text-white placeholder-slate-500 p-4 focus:outline-none text-sm"
+                    disabled={loading}
+                  />
+                </div>
               </div>
             )}
-          </div>
 
-          {/* Submit Button */}
-          <button
-            onClick={mode === 'login' ? handleLogin : handleSignUp}
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold py-4 px-6 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 active:scale-95"
-          >
-            {loading ? (
-              <>
-                <i className="fa-solid fa-spinner fa-spin"></i>
-                <span>{mode === 'login' ? 'Logging in...' : 'Creating account...'}</span>
-              </>
-            ) : (
-              <>
-                <i className={`fa-solid ${mode === 'login' ? 'fa-sign-in-alt' : 'fa-user-plus'}`}></i>
-                <span>{mode === 'login' ? 'Login' : 'Create Account'}</span>
-              </>
+            {/* Submit Button */}
+            <button
+              onClick={mode === 'login' ? handleLogin : handleSignUp}
+              disabled={loading}
+              className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 ${
+                userType === 'user'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-emerald-500/30'
+                  : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-blue-500/30'
+              }`}
+            >
+              {loading ? (
+                <>
+                  <i className="fa-solid fa-circle-notch fa-spin"></i>
+                  <span>{mode === 'login' ? 'Signing in...' : 'Creating account...'}</span>
+                </>
+              ) : (
+                <>
+                  <i className={`fa-solid ${mode === 'login' ? 'fa-arrow-right' : 'fa-user-plus'}`}></i>
+                  <span>{mode === 'login' ? 'Sign In' : 'Create Account'}</span>
+                </>
+              )}
+            </button>
+
+            {/* Demo Credentials */}
+            {mode === 'login' && (
+              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 animate-in fade-in duration-500">
+                <div className="flex items-center space-x-2 mb-2">
+                  <i className="fa-solid fa-lightbulb text-amber-400 text-xs"></i>
+                  <span className="text-xs font-semibold text-slate-400">Demo Credentials</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-slate-700/50 rounded-lg px-3 py-2">
+                    <p className="text-slate-500">Phone</p>
+                    <p className="text-white font-mono">1234567890</p>
+                  </div>
+                  <div className="bg-slate-700/50 rounded-lg px-3 py-2">
+                    <p className="text-slate-500">Password</p>
+                    <p className="text-white font-mono">123456</p>
+                  </div>
+                </div>
+              </div>
             )}
-          </button>
-
-          {/* Info Card */}
-          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-4">
-            <p className="text-xs text-blue-900">
-              <i className="fa-solid fa-lightbulb text-blue-600 mr-2"></i>
-              <span className="font-semibold">Demo credentials:</span>
-            </p>
-            <p className="text-xs text-blue-700 mt-2">
-              Phone: <span className="font-mono">1234567890</span>
-            </p>
-            <p className="text-xs text-blue-700">
-              Password: <span className="font-mono">123456</span>
-            </p>
           </div>
         </div>
 
         {/* Footer */}
-        <p className="text-center text-emerald-100 text-xs mt-6">
-          &copy; {new Date().getFullYear()} EcoSmart Systems. Stay Clean, Stay Green.
-        </p>
+        <div className="text-center mt-8 animate-in fade-in duration-700" style={{ animationDelay: '400ms' }}>
+          <p className="text-slate-500 text-xs">
+            &copy; {new Date().getFullYear()} EcoSmart Systems
+          </p>
+          <p className="text-slate-600 text-xs mt-1">Stay Clean, Stay Green</p>
+        </div>
       </div>
     </div>
   );
