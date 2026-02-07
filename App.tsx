@@ -124,6 +124,7 @@ const App: React.FC = () => {
             userProfile={userProfile}
             onBack={() => setCurrentView(AppView.HOME)}
             onProfileUpdate={setUserProfile}
+            onLocationChange={setLocation}
           />
         );
       default:

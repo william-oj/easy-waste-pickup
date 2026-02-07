@@ -6,6 +6,8 @@ export interface UserProfile {
   phone: string;
   email?: string;
   address?: string;
+  lat?: number;
+  lng?: number;
   id?: string;
 }
 
@@ -52,6 +54,8 @@ export const getFirebaseUserProfile = async (): Promise<UserProfile | null> => {
         phone: data.phone || '',
         email: data.email || auth.currentUser.email || '',
         address: data.address || '',
+        lat: data.lat,
+        lng: data.lng,
         id: auth.currentUser.uid
       };
     }

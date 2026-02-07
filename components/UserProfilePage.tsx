@@ -3,22 +3,29 @@ import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { UserProfile } from '../services/userProfileService';
+import { LocationData } from '../types';
+import LocationPicker from './LocationPicker';
 
 interface UserProfilePageProps {
   userProfile: UserProfile | null;
   onBack: () => void;
   onProfileUpdate: (profile: UserProfile) => void;
+  onLocationChange?: (location: LocationData) => void;
 }
 
 const UserProfilePage: React.FC<UserProfilePageProps> = ({
   userProfile,
   onBack,
-  onProfileUpdate
+  onProfileUpdate,
+  onLocationChange
 }) => {
   const [name, setName] = useState(userProfile?.name || '');
   const [phone, setPhone] = useState(userProfile?.phone || '');
   const [email, setEmail] = useState(userProfile?.email || '');
   const [address, setAddress] = useState(userProfile?.address || '');
+  const [lat, setLat] = useState<number | undefined>(userProfile?.lat);
+  const [lng, setLng] = useState<number | undefined>(userProfile?.lng);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -64,6 +71,8 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({
           phone: phone.trim(),
           email: email.trim() || undefined,
           address: address.trim() || undefined,
+          lat: lat,
+          lng: lng,
           id: auth.currentUser.uid
         };
 
@@ -78,10 +87,19 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({
         localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
 
         onProfileUpdate(updatedProfile);
-        
+
+        // Also update location in app state if coordinates exist
+        if (onLocationChange && address) {
+          onLocationChange({
+            address: address.trim(),
+            lat: lat,
+            lng: lng
+          });
+        }
+
         // Show success feedback
         setSaveSuccess(true);
-        
+
         // Delay showing modal to allow animation
         setTimeout(() => {
           setShowSuccessModal(true);
@@ -128,7 +146,16 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({
     setPhone(userProfile?.phone || '');
     setEmail(userProfile?.email || '');
     setAddress(userProfile?.address || '');
+    setLat(userProfile?.lat);
+    setLng(userProfile?.lng);
     setIsEditing(false);
+  };
+
+  const handleMapLocationSelect = (location: LocationData) => {
+    setAddress(location.address);
+    setLat(location.lat);
+    setLng(location.lng);
+    setShowMapPicker(false);
   };
 
   return (
@@ -258,6 +285,22 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({
               rows={3}
               className="w-full p-4 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-base font-medium transition-all resize-none"
             />
+            {/* Map Location Indicator */}
+            {lat && lng && (
+              <p className="text-xs text-emerald-600 flex items-center">
+                <i className="fa-solid fa-map-pin mr-1"></i>
+                Map coordinates set
+              </p>
+            )}
+            {/* Set on Map Button */}
+            <button
+              type="button"
+              onClick={() => setShowMapPicker(true)}
+              className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold py-3 rounded-xl flex items-center justify-center space-x-2 shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all"
+            >
+              <i className="fa-solid fa-map-location-dot"></i>
+              <span>Set Location on Map</span>
+            </button>
           </div>
 
           {/* Action Buttons */}
@@ -443,6 +486,15 @@ const UserProfilePage: React.FC<UserProfilePageProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Location Picker Modal */}
+      {showMapPicker && (
+        <LocationPicker
+          initialLocation={{ address: address || '', lat, lng }}
+          onLocationSelect={handleMapLocationSelect}
+          onClose={() => setShowMapPicker(false)}
+        />
       )}
     </div>
   );

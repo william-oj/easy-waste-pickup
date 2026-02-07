@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AppView, LocationData } from '../types';
-import { hasUserProfile, getUserProfile } from '../services/userProfileService';
+import { hasUserProfile, getUserProfile, saveFirebaseUserProfile } from '../services/userProfileService';
 import { getSavedLocation, saveLocation } from '@/services/locationService';
 import UserProfilePrompt from './UserProfilePrompt';
 import LocationPicker from './LocationPicker';
@@ -25,7 +25,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, location, onLocationChange, onP
   const [pendingCount, setPendingCount] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
 
-  // Check if user has profile and load name
+  // Check if user has profile and load name + location from Firebase
   useEffect(() => {
     const checkProfile = async () => {
       const hasProfile = await hasUserProfile();
@@ -33,6 +33,15 @@ const Home: React.FC<HomeProps> = ({ onNavigate, location, onLocationChange, onP
       const profile = await getUserProfile();
       if (profile?.name) {
         setUserName(profile.name);
+      }
+      // Load location from Firebase profile if available
+      if (profile?.address && profile?.lat && profile?.lng) {
+        onLocationChange({
+          address: profile.address,
+          lat: profile.lat,
+          lng: profile.lng
+        });
+        setSavedLocation(profile.address);
       }
     };
     checkProfile();
@@ -93,13 +102,26 @@ const Home: React.FC<HomeProps> = ({ onNavigate, location, onLocationChange, onP
     }
   };
 
-  const handleMapLocationSelect = (newLocation: LocationData) => {
+  const handleMapLocationSelect = async (newLocation: LocationData) => {
     // Save to localStorage with full location data including coordinates
     saveLocation(newLocation.address, newLocation.lat, newLocation.lng);
     onLocationChange(newLocation);
     setSavedLocation(newLocation.address);
     setShowMapPicker(false);
     setIsEditingLocation(false);
+
+    // Also save to Firebase profile if logged in
+    if (auth.currentUser) {
+      try {
+        await saveFirebaseUserProfile({
+          address: newLocation.address,
+          lat: newLocation.lat,
+          lng: newLocation.lng
+        } as any);
+      } catch (error) {
+        console.error('Error saving location to profile:', error);
+      }
+    }
   };
 
   const handleEditAddress = () => {
