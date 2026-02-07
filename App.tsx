@@ -14,17 +14,21 @@ import CollectorDashboard from './components/CollectorDashboard';
 import MyRequests from './components/MyRequests';
 import UserProfilePage from './components/UserProfilePage';
 import { getUserProfile, UserProfile } from './services/userProfileService';
-import ScrollingBackButton from './components/ScrollingBackButton';
 import AuthPage from './components/AuthPage';
 
-// Replace with your actual Gemini API key
-const GEMINI_API_KEY = 'AIzaSyCLmn8KBSHaiHJJRvqZNryuDFSSbZEzNm8';
+const GEMINI_API_KEY =
+  (import.meta.env.VITE_GEMINI_API_KEY as string | undefined)?.trim() ?? '';
 
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model: GenerativeModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
+const model: GenerativeModel | null = genAI
+  ? genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  : null;
 
 const generateContent = async (contents: any) => {
   try {
+    if (!model) {
+      return { candidates: [{ content: { parts: [{ text: 'AI is disabled. Missing API key.' }] } }] };
+    }
     const result = await model.generateContent({ contents });
     return result.response;
   } catch (error) {
@@ -796,7 +800,6 @@ const RegularPickupView: React.FC<{
           </div>
         )}
       </div>
-      <ScrollingBackButton onBack={onBack} showHomeButton={true} />
     </div>
   );
 };

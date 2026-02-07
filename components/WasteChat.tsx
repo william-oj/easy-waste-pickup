@@ -1,8 +1,6 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { LocationData, ChatMessage } from '../types';
 import { chatWithGemini } from '../services/geminiService';
-import ScrollingBackButton from './ScrollingBackButton';
 
 interface WasteChatProps {
   onBack: () => void;
@@ -84,8 +82,6 @@ const WasteChat: React.FC<WasteChatProps> = ({ onBack, location }) => {
           </button>
         </div>
       </div>
-      
-      <ScrollingBackButton onBack={onBack} showHomeButton={true} />
     </div>
   );
 };

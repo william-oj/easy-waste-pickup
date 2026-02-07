@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
-import ScrollingBackButton from './ScrollingBackButton';
 
 interface Request {
   id: string;
@@ -250,8 +249,6 @@ const MyRequests: React.FC<MyRequestsProps> = ({ onBack }) => {
           })}
         </div>
       )}
-
-      {onBack && <ScrollingBackButton onBack={onBack} showHomeButton={true} />}
     </div>
   );
 };

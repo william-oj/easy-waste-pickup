@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { LocationData } from '../types';
 import { analyzeWasteImage, getGeminiResponse } from '../services/geminiService';
 import { getUserProfile, UserProfile } from '../services/userProfileService';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import ScrollingBackButton from './ScrollingBackButton';
 
 interface BulkyPickupProps {
   onBack: () => void;
@@ -162,8 +160,6 @@ const BulkyPickup: React.FC<BulkyPickupProps> = ({ onBack, location }) => {
           </div>
         </div>
       )}
-      
-      <ScrollingBackButton onBack={onBack} showHomeButton={true} />
     </div>
   );
 };

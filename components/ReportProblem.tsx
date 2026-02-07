@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { LocationData } from '../types';
 import { getGeminiResponse } from '../services/geminiService';
 import { getUserProfile, UserProfile } from '../services/userProfileService';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import ScrollingBackButton from './ScrollingBackButton';
 
 interface ReportProblemProps {
   onBack: () => void;
@@ -111,8 +109,6 @@ const ReportProblem: React.FC<ReportProblemProps> = ({ onBack, location }) => {
           </button>
         </div>
       )}
-      
-      <ScrollingBackButton onBack={onBack} showHomeButton={true} />
     </div>
   );
 };
