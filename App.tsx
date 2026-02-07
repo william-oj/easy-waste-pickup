@@ -58,6 +58,9 @@ const App: React.FC = () => {
             setUserType('user');
             setIsCollectorLoggedIn(false);
             setCurrentView(AppView.HOME);
+            // Load user profile when logged in as regular user
+            const profile = await getUserProfile();
+            setUserProfile(profile);
           }
         } catch (error) {
           console.error('Error checking user type:', error);
@@ -67,19 +70,11 @@ const App: React.FC = () => {
       } else {
         setUserType(null);
         setIsCollectorLoggedIn(false);
+        setUserProfile(null);
       }
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
-
-  // Load user profile on mount
-  useEffect(() => {
-    const loadProfile = async () => {
-      const profile = await getUserProfile();
-      setUserProfile(profile);
-    };
-    loadProfile();
   }, []);
 
   // Try to get geolocation on mount
@@ -160,7 +155,7 @@ const App: React.FC = () => {
 
   // Render other views with the standard wrapper
   return (
-    <div className="min-h-screen w-full sm:max-w-md sm:mx-auto bg-slate-50 flex flex-col">
+    <div className="min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-slate-50 flex flex-col">
       {/* Header */}
       <header className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white px-4 py-4 shadow-md shrink-0">
         <div className="flex items-center justify-between">
@@ -326,6 +321,8 @@ const RegularPickupView: React.FC<{
     try {
       await addDoc(collection(db, 'requests'), {
         address: location.address || 'Unknown',
+        latitude: location.lat,
+        longitude: location.lng,
         wasteType: allowMultiple ? wasteTypes.join(', ') : wasteTypes[0],
         wasteTypes: wasteTypes,
         status: 'pending',
@@ -363,6 +360,8 @@ const RegularPickupView: React.FC<{
       const schedulesRef = collection(db, 'users', userProfile.id, 'schedules');
       await addDoc(schedulesRef, {
         address: location.address || 'Unknown',
+        latitude: location.lat,
+        longitude: location.lng,
         wasteTypes: wasteTypes,
         daysOfWeek: selectedDays,
         enabled: true,

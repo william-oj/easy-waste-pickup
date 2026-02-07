@@ -38,6 +38,8 @@ const ReportProblem: React.FC<ReportProblemProps> = ({ onBack, location }) => {
     try {
       await addDoc(collection(db, 'reports'), {
         address: location.address || 'Unknown',
+        latitude: location.lat,
+        longitude: location.lng,
         problemType,
         description,
         status: 'open',

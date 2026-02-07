@@ -138,101 +138,84 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   ];
 
   return (
-    <div className="min-h-screen w-full sm:max-w-md sm:mx-auto bg-slate-900 flex flex-col overflow-x-hidden">
-      {/* Animated Background */}
-      <div className="fixed inset-0 w-full sm:max-w-md sm:mx-auto overflow-hidden pointer-events-none">
+    <div className="h-screen h-[100dvh] w-full max-w-full overflow-hidden bg-slate-900 flex flex-col">
+      {/* Animated Background - Absolute instead of Fixed */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Main gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-slate-900 to-cyan-900"></div>
 
         {/* Animated gradient orbs */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-0 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
-        <div className="absolute top-1/2 left-0 w-64 h-64 bg-teal-500/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="absolute top-0 left-1/4 w-64 h-64 bg-emerald-500/30 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-0 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-1/2 left-0 w-40 h-40 bg-teal-500/20 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
 
         {/* Grid pattern overlay */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: 'linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px)',
-          backgroundSize: '50px 50px'
+        <div className="absolute inset-0 opacity-5" style={{
+          backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)',
+          backgroundSize: '40px 40px'
         }}></div>
-
-        {/* Floating particles */}
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-2 h-2 bg-emerald-400/40 rounded-full animate-bounce"
-            style={{
-              left: `${15 + i * 15}%`,
-              top: `${20 + (i % 3) * 25}%`,
-              animationDelay: `${i * 0.3}s`,
-              animationDuration: `${2 + i * 0.5}s`
-            }}
-          ></div>
-        ))}
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 flex-1 flex flex-col px-6 py-8 overflow-y-auto">
-        {/* Logo Section */}
-        <div className="text-center mb-8 animate-in fade-in slide-in-from-top duration-700">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-3xl mb-4 shadow-2xl shadow-emerald-500/30">
-            <i className="fa-solid fa-leaf text-3xl text-white"></i>
+      {/* Content - Scrollable */}
+      <div className={`relative z-10 flex-1 flex flex-col px-5 ${mode === 'signup' ? 'py-3' : 'py-4'} overflow-y-auto`}>
+        {/* Logo Section - Minimal for Signup */}
+        {mode === 'login' ? (
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-2xl mb-3 shadow-xl shadow-emerald-500/30">
+              <i className="fa-solid fa-leaf text-2xl text-white"></i>
+            </div>
+            <h1 className="text-2xl font-black text-white mb-1 tracking-tight">
+              Easy<span className="text-emerald-400">Waste</span>
+            </h1>
+            <p className="text-slate-400 text-xs">Smart waste management</p>
           </div>
-          <h1 className="text-3xl font-black text-white mb-2 tracking-tight">
-            Easy<span className="text-emerald-400">Waste</span>
-          </h1>
-          <p className="text-slate-400 text-sm">Smart waste management for everyone</p>
-
-          {/* Feature badges */}
-          <div className="flex justify-center space-x-3 mt-4">
-            {features.map((feature, i) => (
-              <div
-                key={feature.text}
-                className="flex items-center space-x-1 bg-white/5 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10 animate-in fade-in duration-500"
-                style={{ animationDelay: `${300 + i * 100}ms` }}
-              >
-                <i className={`fa-solid ${feature.icon} text-emerald-400 text-xs`}></i>
-                <span className="text-xs text-slate-300">{feature.text}</span>
+        ) : (
+          <div className="text-center mb-2">
+            <h1 className="text-xl font-black text-white tracking-tight flex items-center justify-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                <i className="fa-solid fa-leaf text-sm text-white"></i>
               </div>
-            ))}
+              <span>Easy<span className="text-emerald-400">Waste</span></span>
+            </h1>
           </div>
-        </div>
+        )}
 
         {/* Auth Card */}
-        <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: '200ms' }}>
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
           {/* User Type Toggle */}
-          <div className="p-4 border-b border-white/10">
-            <div className="flex p-1 bg-slate-800/50 rounded-2xl">
+          <div className="p-3 border-b border-white/10">
+            <div className="flex p-1 bg-slate-800/50 rounded-xl">
               <button
                 onClick={() => { setUserType('user'); resetForm(); }}
-                className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
+                className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-lg font-semibold text-sm transition-all duration-300 ${
                   userType === 'user'
                     ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/30'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <i className="fa-solid fa-house"></i>
+                <i className="fa-solid fa-house text-xs"></i>
                 <span>Resident</span>
               </button>
               <button
                 onClick={() => { setUserType('collector'); resetForm(); }}
-                className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
+                className={`flex-1 flex items-center justify-center space-x-2 py-2.5 rounded-lg font-semibold text-sm transition-all duration-300 ${
                   userType === 'collector'
                     ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg shadow-blue-500/30'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                <i className="fa-solid fa-truck"></i>
+                <i className="fa-solid fa-truck text-xs"></i>
                 <span>Collector</span>
               </button>
             </div>
           </div>
 
           {/* Mode Toggle */}
-          <div className="px-6 pt-4">
+          <div className="px-4 pt-3">
             <div className="flex space-x-4 border-b border-white/10">
               <button
                 onClick={() => { setMode('login'); resetForm(); }}
-                className={`pb-3 px-1 font-semibold text-sm transition-all relative ${
+                className={`pb-2.5 px-1 font-semibold text-sm transition-all relative ${
                   mode === 'login' ? 'text-white' : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
@@ -243,7 +226,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
               </button>
               <button
                 onClick={() => { setMode('signup'); resetForm(); }}
-                className={`pb-3 px-1 font-semibold text-sm transition-all relative ${
+                className={`pb-2.5 px-1 font-semibold text-sm transition-all relative ${
                   mode === 'signup' ? 'text-white' : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
@@ -256,7 +239,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
           </div>
 
           {/* Form */}
-          <div className="p-6 space-y-4">
+          <div className={`p-4 ${mode === 'signup' ? 'space-y-2' : 'space-y-3'}`}>
             {/* Error Message */}
             {error && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-center space-x-3 animate-in shake duration-300">
@@ -269,7 +252,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
             {/* Name Field - Signup Only */}
             {mode === 'signup' && (
-              <div className="space-y-2 animate-in fade-in slide-in-from-left duration-300">
+              <div className="space-y-1 animate-in fade-in slide-in-from-left duration-300">
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Full Name</label>
                 <div className={`flex items-center bg-slate-800/50 rounded-xl border-2 transition-all ${
                   focusedField === 'name' ? 'border-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-transparent'
@@ -283,8 +266,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                     onChange={(e) => setName(e.target.value)}
                     onFocus={() => setFocusedField('name')}
                     onBlur={() => setFocusedField(null)}
-                    placeholder="John Doe"
-                    className="flex-1 bg-transparent text-white placeholder-slate-500 p-4 focus:outline-none text-sm"
+                    placeholder="William O'Rivers"
+                    className="flex-1 bg-transparent text-white placeholder-slate-500 py-3 pr-3 focus:outline-none text-sm"
                     disabled={loading}
                   />
                 </div>
@@ -292,7 +275,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             )}
 
             {/* Phone Field */}
-            <div className="space-y-2">
+            <div className={`${mode === 'signup' ? 'space-y-1' : 'space-y-2'}`}>
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Phone Number</label>
               <div className={`flex items-center bg-slate-800/50 rounded-xl border-2 transition-all ${
                 focusedField === 'phone' ? 'border-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-transparent'
@@ -307,7 +290,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   onFocus={() => setFocusedField('phone')}
                   onBlur={() => setFocusedField(null)}
                   placeholder="Enter phone number"
-                  className="flex-1 bg-transparent text-white placeholder-slate-500 p-4 focus:outline-none text-sm"
+                  className="flex-1 bg-transparent text-white placeholder-slate-500 py-3 pr-3 focus:outline-none text-sm"
                   disabled={loading}
                 />
               </div>
@@ -315,7 +298,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
             {/* Email Field - Signup Only */}
             {mode === 'signup' && (
-              <div className="space-y-2 animate-in fade-in slide-in-from-left duration-300" style={{ animationDelay: '100ms' }}>
+              <div className="space-y-1 animate-in fade-in slide-in-from-left duration-300" style={{ animationDelay: '100ms' }}>
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                   Email <span className="text-slate-600">(Optional)</span>
                 </label>
@@ -332,7 +315,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
                     placeholder="your@email.com"
-                    className="flex-1 bg-transparent text-white placeholder-slate-500 p-4 focus:outline-none text-sm"
+                    className="flex-1 bg-transparent text-white placeholder-slate-500 py-3 pr-3 focus:outline-none text-sm"
                     disabled={loading}
                   />
                 </div>
@@ -340,7 +323,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             )}
 
             {/* Password Field */}
-            <div className="space-y-2">
+            <div className={`${mode === 'signup' ? 'space-y-1' : 'space-y-2'}`}>
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Password</label>
               <div className={`flex items-center bg-slate-800/50 rounded-xl border-2 transition-all ${
                 focusedField === 'password' ? 'border-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-transparent'
@@ -355,7 +338,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   onFocus={() => setFocusedField('password')}
                   onBlur={() => setFocusedField(null)}
                   placeholder="••••••••"
-                  className="flex-1 bg-transparent text-white placeholder-slate-500 p-4 focus:outline-none text-sm"
+                  className="flex-1 bg-transparent text-white placeholder-slate-500 py-3 focus:outline-none text-sm"
                   disabled={loading}
                 />
                 <button
@@ -370,7 +353,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
             {/* Confirm Password - Signup Only */}
             {mode === 'signup' && (
-              <div className="space-y-2 animate-in fade-in slide-in-from-left duration-300" style={{ animationDelay: '200ms' }}>
+              <div className="space-y-1 animate-in fade-in slide-in-from-left duration-300" style={{ animationDelay: '200ms' }}>
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Confirm Password</label>
                 <div className={`flex items-center bg-slate-800/50 rounded-xl border-2 transition-all ${
                   focusedField === 'confirm' ? 'border-emerald-500 shadow-lg shadow-emerald-500/10' : 'border-transparent'
@@ -385,7 +368,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                     onFocus={() => setFocusedField('confirm')}
                     onBlur={() => setFocusedField(null)}
                     placeholder="••••••••"
-                    className="flex-1 bg-transparent text-white placeholder-slate-500 p-4 focus:outline-none text-sm"
+                    className="flex-1 bg-transparent text-white placeholder-slate-500 py-3 pr-3 focus:outline-none text-sm"
                     disabled={loading}
                   />
                 </div>
@@ -396,7 +379,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
             <button
               onClick={mode === 'login' ? handleLogin : handleSignUp}
               disabled={loading}
-              className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 ${
+              className={`w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 ${
                 userType === 'user'
                   ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-emerald-500/30'
                   : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-blue-500/30'
@@ -417,18 +400,18 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
             {/* Demo Credentials */}
             {mode === 'login' && (
-              <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 animate-in fade-in duration-500">
-                <div className="flex items-center space-x-2 mb-2">
+              <div className="bg-slate-800/50 rounded-xl p-3 border border-slate-700/50 animate-in fade-in duration-500">
+                <div className="flex items-center space-x-2 mb-1.5">
                   <i className="fa-solid fa-lightbulb text-amber-400 text-xs"></i>
                   <span className="text-xs font-semibold text-slate-400">Demo Credentials</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-slate-700/50 rounded-lg px-3 py-2">
-                    <p className="text-slate-500">Phone</p>
+                  <div className="bg-slate-700/50 rounded-lg px-2.5 py-1.5">
+                    <p className="text-slate-500 text-[10px]">Phone</p>
                     <p className="text-white font-mono">1234567890</p>
                   </div>
-                  <div className="bg-slate-700/50 rounded-lg px-3 py-2">
-                    <p className="text-slate-500">Password</p>
+                  <div className="bg-slate-700/50 rounded-lg px-2.5 py-1.5">
+                    <p className="text-slate-500 text-[10px]">Password</p>
                     <p className="text-white font-mono">123456</p>
                   </div>
                 </div>
@@ -437,13 +420,14 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-8 animate-in fade-in duration-700" style={{ animationDelay: '400ms' }}>
-          <p className="text-slate-500 text-xs">
-            &copy; {new Date().getFullYear()} EcoSmart Systems
-          </p>
-          <p className="text-slate-600 text-xs mt-1">Stay Clean, Stay Green</p>
-        </div>
+        {/* Footer - Only show on login */}
+        {mode === 'login' && (
+          <div className="text-center mt-4 animate-in fade-in duration-700" style={{ animationDelay: '400ms' }}>
+            <p className="text-slate-500 text-xs">
+              &copy; {new Date().getFullYear()} EcoSmart Systems
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

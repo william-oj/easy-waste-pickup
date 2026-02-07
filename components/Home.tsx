@@ -3,8 +3,8 @@ import { AppView, LocationData } from '../types';
 import { hasUserProfile, getUserProfile } from '../services/userProfileService';
 import { getSavedLocation, saveLocation } from '@/services/locationService';
 import UserProfilePrompt from './UserProfilePrompt';
+import LocationPicker from './LocationPicker';
 import { UserProfile } from '../services/userProfileService';
-import { signOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 
@@ -18,6 +18,7 @@ interface HomeProps {
 const Home: React.FC<HomeProps> = ({ onNavigate, location, onLocationChange, onProfileClick }) => {
   const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const [tempAddress, setTempAddress] = useState(location.address);
   const [savedLocation, setSavedLocation] = useState<string | null>(null);
   const [userName, setUserName] = useState('');
@@ -92,17 +93,18 @@ const Home: React.FC<HomeProps> = ({ onNavigate, location, onLocationChange, onP
     }
   };
 
+  const handleMapLocationSelect = (newLocation: LocationData) => {
+    // Save to localStorage with full location data including coordinates
+    saveLocation(newLocation.address, newLocation.lat, newLocation.lng);
+    onLocationChange(newLocation);
+    setSavedLocation(newLocation.address);
+    setShowMapPicker(false);
+    setIsEditingLocation(false);
+  };
+
   const handleEditAddress = () => {
     setTempAddress(location.address);
     setIsEditingLocation(true);
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (err: any) {
-      alert('Logout failed: ' + err.message);
-    }
   };
 
   const getGreeting = () => {
@@ -154,7 +156,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, location, onLocationChange, onP
   ];
 
   return (
-    <div className="min-h-screen w-full sm:max-w-md sm:mx-auto bg-slate-50 flex flex-col">
+    <div className="min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-slate-50 flex flex-col">
       {showProfilePrompt && (
         <UserProfilePrompt
           onComplete={handleProfileComplete}
@@ -187,12 +189,6 @@ const Home: React.FC<HomeProps> = ({ onNavigate, location, onLocationChange, onP
                 className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30 hover:bg-white/30 transition-all active:scale-95"
               >
                 <i className="fa-solid fa-user"></i>
-              </button>
-              <button
-                onClick={handleLogout}
-                className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30 hover:bg-white/30 transition-all active:scale-95"
-              >
-                <i className="fa-solid fa-right-from-bracket"></i>
               </button>
             </div>
           </div>
@@ -243,6 +239,12 @@ const Home: React.FC<HomeProps> = ({ onNavigate, location, onLocationChange, onP
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-gray-500 font-medium">Service Location</p>
                   <p className="font-semibold text-gray-800 truncate">{displayAddress}</p>
+                  {location.lat && location.lng && (
+                    <p className="text-xs text-emerald-600 flex items-center mt-0.5">
+                      <i className="fa-solid fa-map-pin mr-1"></i>
+                      Map location set
+                    </p>
+                  )}
                 </div>
               </div>
               <button
@@ -268,6 +270,14 @@ const Home: React.FC<HomeProps> = ({ onNavigate, location, onLocationChange, onP
                 autoFocus
                 className="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all"
               />
+              {/* Map Picker Button */}
+              <button
+                onClick={() => setShowMapPicker(true)}
+                className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold py-3 rounded-xl flex items-center justify-center space-x-2 shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
+              >
+                <i className="fa-solid fa-map-location-dot"></i>
+                <span>Set on Map</span>
+              </button>
               <div className="flex space-x-2">
                 <button
                   onClick={handleSaveAddress}
@@ -356,6 +366,15 @@ const Home: React.FC<HomeProps> = ({ onNavigate, location, onLocationChange, onP
           </div>
         </div>
       </main>
+
+      {/* Location Picker Modal */}
+      {showMapPicker && (
+        <LocationPicker
+          initialLocation={location}
+          onLocationSelect={handleMapLocationSelect}
+          onClose={() => setShowMapPicker(false)}
+        />
+      )}
     </div>
   );
 };

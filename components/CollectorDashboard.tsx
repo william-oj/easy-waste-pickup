@@ -3,10 +3,13 @@ import { collection, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firesto
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
 import CollectorProfile from './CollectorProfile.tsx';
+import CollectorMap from './CollectorMap';
 
 interface Request {
   id: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
   wasteType: string;
   status: 'pending' | 'accepted' | 'completed';
   acceptedBy?: string;
@@ -26,6 +29,7 @@ const CollectorDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'jobs' | 'history' | 'profile'>('jobs');
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [mapRequest, setMapRequest] = useState<Request | null>(null);
 
   // Fetch collector profile on mount
   useEffect(() => {
@@ -122,7 +126,7 @@ const CollectorDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full sm:max-w-md sm:mx-auto bg-slate-50 flex flex-col">
+    <div className="min-h-screen min-h-[100dvh] w-full max-w-full overflow-x-hidden bg-slate-50 flex flex-col">
       {/* Header - Glassmorphism style */}
       <header className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white px-4 pt-6 pb-20 relative overflow-hidden">
         {/* Animated background circles */}
@@ -276,6 +280,7 @@ const CollectorDashboard: React.FC = () => {
                       request={req}
                       type="active"
                       onAction={() => markComplete(req.id)}
+                      onViewMap={() => setMapRequest(req)}
                       isLoading={actionLoading === req.id}
                       isExpanded={expandedCard === req.id}
                       onToggle={() => setExpandedCard(expandedCard === req.id ? null : req.id)}
@@ -307,6 +312,7 @@ const CollectorDashboard: React.FC = () => {
                       request={req}
                       type="pending"
                       onAction={() => acceptRequest(req.id)}
+                      onViewMap={() => setMapRequest(req)}
                       isLoading={actionLoading === req.id}
                       isExpanded={expandedCard === req.id}
                       onToggle={() => setExpandedCard(expandedCard === req.id ? null : req.id)}
@@ -320,6 +326,14 @@ const CollectorDashboard: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Collector Map Modal */}
+      {mapRequest && (
+        <CollectorMap
+          request={mapRequest}
+          onBack={() => setMapRequest(null)}
+        />
+      )}
     </div>
   );
 };
@@ -329,6 +343,7 @@ interface JobCardProps {
   request: Request;
   type: 'pending' | 'active';
   onAction: () => void;
+  onViewMap: () => void;
   isLoading: boolean;
   isExpanded: boolean;
   onToggle: () => void;
@@ -340,6 +355,7 @@ const JobCard: React.FC<JobCardProps> = ({
   request,
   type,
   onAction,
+  onViewMap,
   isLoading,
   isExpanded,
   onToggle,
@@ -355,6 +371,8 @@ const JobCard: React.FC<JobCardProps> = ({
     if (lower.includes('bulk') || lower.includes('furniture')) return 'fa-couch';
     return 'fa-trash';
   };
+
+  const canViewMap = Boolean(request.address);
 
   return (
     <div
@@ -429,22 +447,42 @@ const JobCard: React.FC<JobCardProps> = ({
           {/* Action Buttons */}
           <div className="flex space-x-2">
             {isPending ? (
-              <button
-                onClick={(e) => { e.stopPropagation(); onAction(); }}
-                disabled={isLoading}
-                className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-3 rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center space-x-2 shadow-lg shadow-amber-500/30"
-              >
-                {isLoading ? (
-                  <i className="fa-solid fa-spinner fa-spin"></i>
-                ) : (
-                  <>
-                    <i className="fa-solid fa-hand"></i>
-                    <span>Accept Job</span>
-                  </>
+              <>
+                {/* View Map Button for pending jobs */}
+                {canViewMap && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onViewMap(); }}
+                    className="w-12 bg-blue-100 hover:bg-blue-200 rounded-xl flex items-center justify-center transition-all active:scale-95"
+                  >
+                    <i className="fa-solid fa-map-location-dot text-blue-600"></i>
+                  </button>
                 )}
-              </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onAction(); }}
+                  disabled={isLoading}
+                  className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-3 rounded-xl transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center space-x-2 shadow-lg shadow-amber-500/30"
+                >
+                  {isLoading ? (
+                    <i className="fa-solid fa-spinner fa-spin"></i>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-hand"></i>
+                      <span>Accept Job</span>
+                    </>
+                  )}
+                </button>
+              </>
             ) : (
               <>
+                {/* View Map Button for active jobs */}
+                {canViewMap && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onViewMap(); }}
+                    className="w-12 bg-blue-100 hover:bg-blue-200 rounded-xl flex items-center justify-center transition-all active:scale-95"
+                  >
+                    <i className="fa-solid fa-map-location-dot text-blue-600"></i>
+                  </button>
+                )}
                 <button
                   onClick={(e) => { e.stopPropagation(); onAction(); }}
                   disabled={isLoading}

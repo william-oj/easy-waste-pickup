@@ -42,12 +42,18 @@ export const clearLocalUserProfile = (): void => {
  */
 export const getFirebaseUserProfile = async (): Promise<UserProfile | null> => {
   if (!auth.currentUser) return null;
-  
+
   try {
     const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
     if (userDoc.exists()) {
       const data = userDoc.data();
-      return { name: data.name, phone: data.phone };
+      return {
+        name: data.name || '',
+        phone: data.phone || '',
+        email: data.email || auth.currentUser.email || '',
+        address: data.address || '',
+        id: auth.currentUser.uid
+      };
     }
   } catch (error) {
     console.error('Error fetching user profile from Firebase:', error);

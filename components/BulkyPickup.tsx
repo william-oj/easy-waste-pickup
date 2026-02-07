@@ -64,6 +64,8 @@ const BulkyPickup: React.FC<BulkyPickupProps> = ({ onBack, location }) => {
     try {
       await addDoc(collection(db, 'requests'), {
         address: location.address || 'Unknown',
+        latitude: location.lat,
+        longitude: location.lng,
         wasteType: 'Bulky Pickup',
         description,
         preferredDate,
