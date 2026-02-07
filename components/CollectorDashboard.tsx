@@ -30,6 +30,7 @@ const CollectorDashboard: React.FC = () => {
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [mapRequest, setMapRequest] = useState<Request | null>(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Fetch collector profile on mount
   useEffect(() => {
@@ -145,7 +146,7 @@ const CollectorDashboard: React.FC = () => {
               </div>
             </div>
             <button
-              onClick={handleLogout}
+              onClick={() => setShowLogoutConfirm(true)}
               className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30 hover:bg-white/30 transition-all active:scale-95"
             >
               <i className="fa-solid fa-right-from-bracket"></i>
@@ -333,6 +334,38 @@ const CollectorDashboard: React.FC = () => {
           request={mapRequest}
           onBack={() => setMapRequest(null)}
         />
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8 animate-in zoom-in duration-200">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="fa-solid fa-right-from-bracket text-red-600 text-2xl"></i>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Logout Confirmation</h3>
+              <p className="text-gray-600 text-sm">Are you sure you want to logout? You'll need to login again to access your collector dashboard.</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex items-center justify-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl transition-all"
+              >
+                <i className="fa-solid fa-times"></i>
+                <span>Cancel</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center justify-center space-x-2 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold py-3 px-4 rounded-xl transition-all active:scale-95"
+              >
+                <i className="fa-solid fa-right-from-bracket"></i>
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
